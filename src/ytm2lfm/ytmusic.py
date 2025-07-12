@@ -37,8 +37,6 @@ class YTMusicClient(YTMusic):
         try:
             # Call the parent class method to get raw history
             history = super().get_history()
-            logger.info(f"Fetched {len(history)} recent tracks")
-
             return history
 
         except Exception as e:

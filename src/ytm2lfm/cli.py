@@ -11,7 +11,7 @@ from ytm2lfm.ytmusic import YTMusicClient
 logger = get_logger(__name__)
 
 
-def run_scrobble(dry_run=False):
+def run_scrobble(store=False, dry_run=False):
     # Initialize components
     db = SQLite(settings.sqlite.db_path)
 
@@ -36,12 +36,14 @@ def run_scrobble(dry_run=False):
         tracks_to_scrobble = scrobbler.get_tracks_to_scrobble()
 
         # Scrobble the tracks
-        scrobbler.scrobble_tracks(tracks_to_scrobble, dry_run=dry_run)
+        scrobbler.scrobble_tracks(tracks_to_scrobble, store=store, dry_run=dry_run)
 
         # Clean up database to keep it from growing too large
-        scrobbler.cleanup_database()
+        scrobbler.cleanup_database(dry_run=dry_run)
 
         logger.info("Scrobbling process completed successfully")
+
+        return tracks_to_scrobble
     except Exception as e:
         logger.error(f"Scrobbling process failed: {str(e)}", exc_info=True)
         raise
@@ -56,6 +58,7 @@ def setup_cli():
 Examples:
   python cli.py scrobble    # Normal scrobbling operation
   python cli.py store       # Store tracks without scrobbling
+  python cli.py dry-run     # Dry-run
         """,
     )
 
@@ -67,6 +70,9 @@ Examples:
     # Store command
     subparsers.add_parser("store", help="Store tracks in database without scrobbling")
 
+    # Store command
+    subparsers.add_parser("dry-run", help="Dry-run")
+
     return parser
 
 
@@ -75,12 +81,16 @@ def main():
     args = parser.parse_args()
 
     if args.command == "scrobble":
-        tracks = run_scrobble(dry_run=False)
-        print(f"Scrobbled {len(tracks) if tracks else 0} tracks to Last.fm")
+        tracks = run_scrobble(store=False, dry_run=False)
+        logger.info(f"Scrobbled {len(tracks) if tracks else 0} tracks to Last.fm")
 
     elif args.command == "store":
-        tracks = run_scrobble(dry_run=True)
-        print(f"Stored {len(tracks) if tracks else 0} tracks in database without scrobbling")
+        tracks = run_scrobble(store=True, dry_run=False)
+        logger.info(f"Stored {len(tracks) if tracks else 0} tracks in database without scrobbling")
+
+    elif args.command == "dry-run":
+        tracks = run_scrobble(store=False, dry_run=True)
+        logger.info(f"Dry-run finished. Would scrobble {len(tracks) if tracks else 0} tracks to Last.fm")
     else:
         parser.print_help()
         sys.exit(1)

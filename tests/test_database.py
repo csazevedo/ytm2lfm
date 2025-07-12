@@ -38,7 +38,7 @@ def test_insert_and_fetch_tracks(temp_db_path):
     ]
     n_inserted_rows = db.insert_tracks(tracks)
     rows = db.fetch_latest_scrobbles()
-    assert len(rows) == 2
+    assert len(rows) == n_inserted_rows == 2
     assert rows[0]["video_id"] == "vid2"  # Latest inserted first
 
 

@@ -64,17 +64,19 @@ class Scrobbler:
         else:
             # No overlap found - all tracks are new
             tracks_to_scrobble = tracks_history
-            logger.info(f"No overlap found with existing scrobbles, scrobbling all {len(tracks_to_scrobble)} tracks")
+            logger.info(f"No overlap found with existing scrobbles.")
 
         return tracks_to_scrobble
 
-    def scrobble_tracks(self, tracks: List[Dict[str, Any]], batch_size: int = 50, dry_run=False) -> int:
+    def scrobble_tracks(self, tracks: List[Dict[str, Any]], batch_size: int = 50, store=False, dry_run=False) -> int:
         """
         Scrobble tracks to Last.fm and save them to the database.
 
         Args:
             tracks: List of tracks to scrobble
             batch_size: Number of tracks to process in each batch
+            store: Populates database without scrobbling
+            dry_run: Run without side effects
 
         Returns:
             Number of tracks successfully scrobbled
@@ -92,28 +94,35 @@ class Scrobbler:
         for i in range(0, len(tracks_to_scrobble), batch_size):
             try:
                 tracks_batch = tracks_to_scrobble[i : i + batch_size]
-                if not dry_run:
+                if not store or dry_run:
                     self.lastfm.scrobble_many(tracks_batch)
                     scrobbled_count += len(tracks_batch)
 
-                self.db.insert_tracks(tracks_batch)
-                time.sleep(0.5)  # Avoid rate limiting
+                if dry_run:
+                    logger.info("Dry-run: Skip inserting tracks in database.")
+                else:
+                    self.db.insert_tracks(tracks_batch)
+                    time.sleep(0.5)  # Avoid rate limiting
             except Exception as e:
                 logger.error(f"Failed to scrobble batch starting at index {i}: {str(e)}", exc_info=True)
                 raise
 
-        logger.info(f"Scrobbled {scrobbled_count} tracks to Last.fm")
         return scrobbled_count
 
-    def cleanup_database(self, keep_latest: int = 200):
+    def cleanup_database(self, dry_run=False, keep_latest: int = 200):
         """
         Clean up the database by keeping only the most recent entries.
 
         Args:
+            dry_run: Run without side effects
             keep_latest: Number of most recent entries to keep
         """
-        self.db.delete_except_latest_n(keep_latest)
-        logger.info(f"Database cleaned up, keeping latest {keep_latest} entries")
+        if dry_run:
+            logger.info(f"Dry-run: skipped cleaning database to keep only {keep_latest} entries")
+        else:
+            self.db.delete_except_latest_n(keep_latest)
+            logger.info(f"Database cleaned up, keeping latest {keep_latest} entries")
+            
 
     def _get_recently_played(self) -> List[Dict[str, Any]]:
         """Get recently played tracks from YouTube Music"""
@@ -145,5 +154,5 @@ class Scrobbler:
 
             return processed
         except Exception as e:
-            logger.error(f"Failed to fetch YouTube Music history: {str(e)}")
+            logger.error(f"Failed to process YouTube Music history: {str(e)}")
             raise

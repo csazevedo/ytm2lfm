@@ -31,7 +31,7 @@ class LastFMClient(pylast.LastFMNetwork):
 
             # Verify authentication
             self.get_authenticated_user()
-            logger.info("Successfully authenticated with Last.fm")
+            logger.info("LastFM client initialized")
         except pylast.WSError as e:
             logger.error("Last.fm authentication failed: %s", e)
             raise

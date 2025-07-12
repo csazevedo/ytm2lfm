@@ -57,6 +57,10 @@ scrobble:  ## Run the scrobbler to send tracks to Last.fm
 store:  ## Store tracks without scrobbling
 	uv run $(CLI_PATH) store
 
+.PHONY: dry-run
+dry-run:  ## Run without side effects (scrobbling or storing)
+	uv run $(CLI_PATH) dry-run
+
 ##@ Running Application with Docker
 
 .PHONY: docker-scrobble
@@ -66,6 +70,10 @@ docker-scrobble:  ## Run the scrobbler in Docker to send tracks to Last.fm
 .PHONY: docker-store
 docker-store:  ## Store tracks without scrobbling using Docker
 	docker compose run --rm app python $(CLI_PATH) store
+
+.PHONY: docker-dry-run
+docker-dry-run:  ## Run in Docker without side effects (scrobbling or storing)
+	docker compose run --rm app python $(CLI_PATH) dry-run
 
 .PHONY: docker-shell
 docker-shell:  ## Run an interactive shell in the container for debugging

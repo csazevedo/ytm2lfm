@@ -113,7 +113,19 @@ make docker-store
 make store
 ```
 
-This will populate the database with your current history, so the next time you run scrobble, it will only scrobble new tracks.
+This will populate the database with your current history, so the next time you run scrobble, it will only scrobble new tracks after the store run.
+
+### Dry-run
+
+This allows to test the run without any side-effects (scrobbling or storing).
+
+```bash
+# Option 1: Run in a docker container
+make docker-dry-run
+
+# Option 2: Run directly in the host machine
+make dry-run
+```
 
 ## Scheduling
 
