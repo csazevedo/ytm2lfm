@@ -1,5 +1,7 @@
 # YTM2LFM - YouTube Music to Last.fm Scrobbler
 
+[![CI](https://github.com/csazevedo/ytm2lfm/actions/workflows/ci.yml/badge.svg)](https://github.com/csazevedo/ytm2lfm/actions/workflows/ci.yml)
+
 ## Introduction
 
 A simple tool to scrobble your YouTube Music listening history to Last.fm.
