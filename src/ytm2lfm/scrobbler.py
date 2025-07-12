@@ -122,7 +122,6 @@ class Scrobbler:
         else:
             self.db.delete_except_latest_n(keep_latest)
             logger.info(f"Database cleaned up, keeping latest {keep_latest} entries")
-            
 
     def _get_recently_played(self) -> List[Dict[str, Any]]:
         """Get recently played tracks from YouTube Music"""
