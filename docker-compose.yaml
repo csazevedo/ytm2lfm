@@ -1,0 +1,8 @@
+services:
+  app:
+    build: .
+    volumes:
+      - ./oauth.json:/app/oauth.json  # should match the path of env var YTMUSIC__AUTH_FILE
+      - ./sqlite:/app/sqlite  # should match the path of env var SQLITE__DB_PATH
+    env_file:
+      - .env
