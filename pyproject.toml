@@ -13,6 +13,7 @@ dev = [
     "pytest",
     "ruff",
     "mypy",
+    "pre-commit",
 ]
 
 [build-system]

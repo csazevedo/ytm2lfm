@@ -2,7 +2,7 @@
 
 # Configuration
 PROJECT_NAME = ytm2lfm
-CLI_PATH = ./src/ytm2lfm/cli.py
+CLI_PATH := ./src/cli.py
 
 .DEFAULT_GOAL := help
 

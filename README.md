@@ -1,6 +1,7 @@
 # YTM2LFM - YouTube Music to Last.fm Scrobbler
 
-[![CI](https://github.com/csazevedo/ytm2lfm/actions/workflows/ci.yml/badge.svg)](https://github.com/csazevedo/ytm2lfm/actions/workflows/ci.yml)
+[![CI](https://github.com/csazevedo/ytm2lfm/actions/workflows/ci.yaml/badge.svg)](https://github.com/csazevedo/ytm2lfm/actions/workflows/ci.yaml)
+[![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 ## Introduction
 
@@ -66,15 +67,18 @@ All configuration is handled through environment variables.
 Copy `.env.example` into `.env` or create a new `.env` file with the following variables:
 
 ```
+# Last.fm API Credentials
 LASTFM__API_KEY=your_lastfm_api_key
 LASTFM__SHARED_SECRET=your_lastfm_shared_secret
 LASTFM__REGISTERED_TO=your_lastfm_username
 LASTFM__PASSWORD=your_lastfm_password
 
+# YouTube Music Credentials
 YTMUSIC__AUTH_FILE=path/to/oauth.json
 YTMUSIC__CLIENT_ID=your_google_client_id
 YTMUSIC__CLIENT_SECRET=your_google_client_secret
 
+# Database Configuration
 SQLITE__DB_PATH=path/to/database.sqlite
 ```
 
@@ -91,7 +95,9 @@ SQLITE__DB_PATH=path/to/database.sqlite
 3. Create OAuth credentials (Desktop application)
 4. Download OAuth credentials JSON file and save it to the location specified in your `.env` file
 
-### Scrobble your YouTube Music history to Last.fm:
+### Run locally for development
+
+#### Scrobble your YouTube Music history to Last.fm:
 
 ```bash
 # Option 1: Run in a docker container
@@ -103,7 +109,7 @@ make scrobble
 
 On first run, these commands will fetch your YouTube Music history (last 200 plays) and scrobble it to Last.fm. On subsequent runs, only new tracks will be scrobbled.
 
-### Store tracks without scrobbling:
+#### Store tracks without scrobbling:
 
 If you don't want to scrobble your entire history on the first run, you can use these commands to store the history without scrobbling:
 
@@ -117,7 +123,7 @@ make store
 
 This will populate the database with your current history, so the next time you run scrobble, it will only scrobble new tracks after the store run.
 
-### Dry-run
+#### Dry-run
 
 This allows to test the run without any side-effects (scrobbling or storing).
 
@@ -127,18 +133,6 @@ make docker-dry-run
 
 # Option 2: Run directly in the host machine
 make dry-run
-```
-
-## Scheduling
-
-For best results, set up a scheduled task (cron job) to run the scrobbler regularly:
-
-```bash
-# Option 1: Example cron job to run every hour with Docker
-0 * * * * cd /path/to/ytm2lfm && make docker-scrobble >> /path/to/logfile.log 2>&1
-
-# Option 2: Example cron job to run every hour
-0 * * * * cd /path/to/ytm2lfm && make scrobble >> /path/to/logfile.log 2>&1
 ```
 
 ## Contributing

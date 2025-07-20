@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     sqlite: SQLiteSettings
     scrobbler: Optional[ScrobblerSettings] = Field(default_factory=ScrobblerSettings)
 
+    # if both a .env file and environment variables are present, environment variables take precedence
     model_config = SettingsConfigDict(
         env_file=".env",
         env_nested_delimiter="__",  # Enables nested loading from env
