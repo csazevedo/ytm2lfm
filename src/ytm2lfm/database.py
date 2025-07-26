@@ -1,10 +1,9 @@
+import logging
 import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List
 
-from ytm2lfm.logger import get_logger
-
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class SQLite:

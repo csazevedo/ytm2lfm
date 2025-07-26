@@ -22,7 +22,7 @@ The scrobbler works by:
 - Simple CLI interface
 - Uses [ytmusicapi](https://github.com/sigma67/ytmusicapi) to fetch the most recent YouTube Music play history
 - Uses [pylast](https://github.com/pylast/pylast) to scrobble new tracks to Last.fm
-- Uses SQLite to store scrobbled tracks and detect new ones
+- Uses SQLite to sync/store scrobbled tracks and detect new ones
 
 ## Limitations
 
@@ -32,8 +32,6 @@ The scrobbler works by:
 
 ## Installation
 
-### Option 1: Docker (Recommended)
-
 The easiest way to use YTM2LFM is with Docker:
 
 1. Clone this repository
@@ -41,22 +39,17 @@ The easiest way to use YTM2LFM is with Docker:
    - Copy `.env.example` to `.env`
    - Fill in the required credentials:
      - Get Last.fm API credentials from [Last.fm API](https://www.last.fm/api/account/create)
-     - Set up Google OAuth credentials at [Google Developer Console](https://console.developers.google.com)
-
-### Option 2: Local installation
-
-Necessary for local development or if you don't want to use Docker:
-
-1. Clone this repository
-2. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Fill in the required credentials:
-     - Get Last.fm API credentials from [Last.fm API](https://www.last.fm/api/account/create)
-     - Set up Google OAuth credentials at [Google Developer Console](https://console.developers.google.com)
-3. Install dependencies
-   ```bash
-   make sync
-   ```
+     - Set up Google OAuth credentials at [Google Developer Console](https://console.developers.google.com) and make sure you get the oatuh.json file that looks like:
+     ```
+      {
+         "scope": "https://www.googleapis.com/auth/youtube",
+         "token_type": "Bearer",
+         "access_token": ?,
+         "refresh_token": ?,
+         "expires_at": ?,
+         "expires_in": ?
+      }
+     ```
 
 ## Usage
 
@@ -80,6 +73,12 @@ YTMUSIC__CLIENT_SECRET=your_google_client_secret
 
 # Database Configuration
 SQLITE__DB_PATH=path/to/database.sqlite
+
+# Scrobbler Configuration (Optional)
+# with the following default values you just need to make sure to not play more than 150 tracks between 2 consecutive runs of ytm2lfm
+SCROBBLER__SEQUENCE_MATCH_LENGTH = 50
+SCROBBLER__BATCH_SIZE = 50
+SCROBBLER__MAX_SYNCED_TRACKS = 200
 ```
 
 #### Last.fm Authentication
@@ -100,39 +99,98 @@ SQLITE__DB_PATH=path/to/database.sqlite
 #### Scrobble your YouTube Music history to Last.fm:
 
 ```bash
-# Option 1: Run in a docker container
 make docker-scrobble
-
-# Option 2: Run directly in the host machine
-make scrobble
 ```
 
 On first run, these commands will fetch your YouTube Music history (last 200 plays) and scrobble it to Last.fm. On subsequent runs, only new tracks will be scrobbled.
 
-#### Store tracks without scrobbling:
+#### Sync tracks without scrobbling:
 
-If you don't want to scrobble your entire history on the first run, you can use these commands to store the history without scrobbling:
+If you don't want to scrobble your entire history on the first run, you can use these commands to sync the history without scrobbling:
 
 ```bash
-# Option 1: Run in a docker container
-make docker-store
-
-# Option 2: Run directly in the host machine
-make store
+make docker-sync
 ```
 
-This will populate the database with your current history, so the next time you run scrobble, it will only scrobble new tracks after the store run.
+This will populate the database with your current history, so the next time you run scrobble, it will only scrobble new tracks after the `sync` run.
 
 #### Dry-run
 
-This allows to test the run without any side-effects (scrobbling or storing).
+This allows to test the run without any side-effects (no syncing or scrobbling).
 
 ```bash
-# Option 1: Run in a docker container
 make docker-dry-run
+```
 
-# Option 2: Run directly in the host machine
-make dry-run
+## Scheduling runs
+
+### General
+
+While there are many ways to schedule periodic runs, here is the simplest one that doesn't require any extra configuration besides running `docker compose up`:
+```
+services:
+ytm2lfm:
+   image: csazev/ytm2lfm:latest  # you might want to pin a specific version here
+   container_name: ytm2lfm
+   command: ["python", "/app/src/cli.py", "scrobble"]
+   volumes:
+   - ./oauth.json:/app/oauth.json  # should match the path of env var YTMUSIC__AUTH_FILE
+   - ./sqlite:/app/sqlite  # should match the path of env var SQLITE__DB_PATH
+   env_file:
+   - .env
+   labels:
+   - "net.reddec.scheduler.cron=0 0 * * *"  # runs every day at midnight
+scheduler:
+   image: ghcr.io/reddec/compose-scheduler:1.0.0
+   container_name: ytm2lfm-scheduler
+   restart: unless-stopped
+   volumes:
+   - /var/run/docker.sock:/var/run/docker.sock:ro
+```
+
+### Synology NAS
+
+1. Create new folder /docker/ytm2lfm
+2. Use Text Editor (or any other editor) to create a file in /docker/ytm2lfm with the environment variables and call it `.env`:
+```
+  # Last.fm API Credentials
+  LASTFM__API_KEY=
+  LASTFM__SHARED_SECRET=
+  LASTFM__REGISTERED_TO=
+  LASTFM__PASSWORD=
+
+  # YouTube Music Credentials
+  YTMUSIC__AUTH_FILE=./oauth.json
+  YTMUSIC__CLIENT_ID=
+  YTMUSIC__CLIENT_SECRET=
+
+  # Database Configuration
+  SQLITE__DB_PATH=./sqlite/scrobbles.db
+```
+3. Add the file oauth.json to /docker/ytm2lfm
+4. Open container manager and create a new Project.
+  4.1. Set project name to `ytm2lfm`
+  4.2. Set path to /docker/ytm2lfm
+  4.3. Set source to create new docker-compose.yml and paste the following:
+  ```
+   services:
+   ytm2lfm:
+      image: csazev/ytm2lfm:latest  # you might want to pin a specific version here
+      container_name: ytm2lfm
+      command: ["python", "/app/src/cli.py", "scrobble"]
+      volumes:
+      - ./oauth.json:/app/oauth.json  # should match the path of env var YTMUSIC__AUTH_FILE
+      - ./sqlite:/app/sqlite  # should match the path of env var SQLITE__DB_PATH
+      env_file:
+      - .env
+      labels:
+      - "net.reddec.scheduler.cron=0 0 * * *"  # runs every day at midnight
+   scheduler:
+      image: ghcr.io/reddec/compose-scheduler:1.0.0
+      container_name: ytm2lfm-scheduler
+      restart: unless-stopped
+      volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 ```
 
 ## Contributing

@@ -1,6 +1,8 @@
 services:
-  app:
+  ytm2lfm:
     build: .
+    container_name: ytm2lfm
+    command: ["python", "/app/src/cli.py", "dry-run"]
     volumes:
       - ./oauth.json:/app/oauth.json  # should match the path of env var YTMUSIC__AUTH_FILE
       - ./sqlite:/app/sqlite  # should match the path of env var SQLITE__DB_PATH

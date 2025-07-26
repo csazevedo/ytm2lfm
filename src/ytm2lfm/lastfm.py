@@ -1,8 +1,8 @@
+import logging
+
 import pylast
 
-from ytm2lfm.logger import get_logger
-
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class LastFMClient(pylast.LastFMNetwork):
