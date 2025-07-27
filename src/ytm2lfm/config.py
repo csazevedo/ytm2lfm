@@ -29,9 +29,22 @@ class YTMusicSettings(BaseModel):
 
 
 class ScrobblerSettings(BaseModel):
-    sequence_match_length: int = Field(50, description="Length of sequence to match for finding new tracks")
-    batch_size: int = Field(50, description="Number of tracks to scrobble in each batch")
-    max_stored_tracks: int = Field(200, description="Maximum number of tracks to keep in the database.")
+    sequence_match_length: int = Field(
+        50,
+        description=(
+            "Number of overlapping tracks between the scrobbled database "
+            "and YouTube Music history used to identify new tracks starting after this overlap."
+        ),
+    )
+    batch_size: int = Field(50, description="Maximum number of tracks to scrobble per batch")
+    max_synced_tracks: int = Field(
+        200,
+        description=(
+            "Maximum number of tracks to store in the database. "
+            "Defaults to 200, which is the maximum number of entries "
+            "returned by the YouTube Music API."
+        ),
+    )
 
 
 class Settings(BaseSettings):

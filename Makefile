@@ -53,9 +53,9 @@ clean:  ## Remove virtual environment and artifacts to reset the project to a cl
 scrobble:  ## Run the scrobbler to send tracks to Last.fm
 	uv run $(CLI_PATH) scrobble
 
-.PHONY: store
-store:  ## Store tracks without scrobbling
-	uv run $(CLI_PATH) store
+.PHONY: sync
+sync:  ## Sync tracks without scrobbling
+	uv run $(CLI_PATH) sync
 
 .PHONY: dry-run
 dry-run:  ## Run without side effects (scrobbling or storing)
@@ -65,16 +65,16 @@ dry-run:  ## Run without side effects (scrobbling or storing)
 
 .PHONY: docker-scrobble
 docker-scrobble:  ## Run the scrobbler in Docker to send tracks to Last.fm
-	docker compose run --rm app python $(CLI_PATH) scrobble
+	docker compose run --rm ytm2lfm python $(CLI_PATH) scrobble
 
-.PHONY: docker-store
-docker-store:  ## Store tracks without scrobbling using Docker
-	docker compose run --rm app python $(CLI_PATH) store
+.PHONY: docker-sync
+docker-sync:  ## Sync tracks without scrobbling using Docker 
+	docker compose run --rm ytm2lfm python $(CLI_PATH) sync
 
 .PHONY: docker-dry-run
 docker-dry-run:  ## Run in Docker without side effects (scrobbling or storing)
-	docker compose run --rm app python $(CLI_PATH) dry-run
+	docker compose run --rm ytm2lfm python $(CLI_PATH) dry-run
 
 .PHONY: docker-shell
 docker-shell:  ## Run an interactive shell in the container for debugging
-	docker compose run --rm app sh
+	docker compose run --rm ytm2lfm sh

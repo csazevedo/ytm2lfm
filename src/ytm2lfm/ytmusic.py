@@ -1,10 +1,9 @@
+import logging
 from typing import Any, Dict, List
 
 from ytmusicapi import OAuthCredentials, YTMusic
 
-from ytm2lfm.logger import get_logger
-
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class YTMusicClient(YTMusic):

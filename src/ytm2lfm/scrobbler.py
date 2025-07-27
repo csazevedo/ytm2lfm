@@ -1,13 +1,13 @@
+import logging
 import time
 from typing import Any, Dict, List
 
 from ytm2lfm.database import SQLite
 from ytm2lfm.lastfm import LastFMClient
-from ytm2lfm.logger import get_logger
 from ytm2lfm.utils import find_overlap_start_index
 from ytm2lfm.ytmusic import YTMusicClient
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Scrobbler:
@@ -68,14 +68,14 @@ class Scrobbler:
 
         return tracks_to_scrobble
 
-    def scrobble_tracks(self, tracks: List[Dict[str, Any]], batch_size: int = 50, store=False, dry_run=False) -> int:
+    def scrobble_tracks(self, tracks: List[Dict[str, Any]], batch_size: int = 50, sync=False, dry_run=False) -> int:
         """
         Scrobble tracks to Last.fm and save them to the database.
 
         Args:
             tracks: List of tracks to scrobble
             batch_size: Number of tracks to process in each batch
-            store: Populates database without scrobbling
+            sync: Syncs database without scrobbling
             dry_run: Run without side effects
 
         Returns:
@@ -94,7 +94,7 @@ class Scrobbler:
         for i in range(0, len(tracks_to_scrobble), batch_size):
             try:
                 tracks_batch = tracks_to_scrobble[i : i + batch_size]
-                if not store or dry_run:
+                if not sync or dry_run:
                     self.lastfm.scrobble_many(tracks_batch)
                     scrobbled_count += len(tracks_batch)
 

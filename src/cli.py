@@ -1,17 +1,21 @@
 import argparse
+import logging
+import os
 import sys
+import textwrap
 
 from ytm2lfm.config import settings
 from ytm2lfm.database import SQLite
 from ytm2lfm.lastfm import LastFMClient
-from ytm2lfm.logger import get_logger
+from ytm2lfm.logger import setup_logging
 from ytm2lfm.scrobbler import Scrobbler
 from ytm2lfm.ytmusic import YTMusicClient
 
-logger = get_logger(__name__)
+setup_logging()
+logger = logging.getLogger(__name__)
 
 
-def run_scrobble(store=False, dry_run=False):
+def run_scrobble(sync=False, dry_run=False):
     # Initialize components
     db = SQLite(settings.sqlite.db_path)
 
@@ -36,7 +40,7 @@ def run_scrobble(store=False, dry_run=False):
         tracks_to_scrobble = scrobbler.get_tracks_to_scrobble()
 
         # Scrobble the tracks
-        scrobbler.scrobble_tracks(tracks_to_scrobble, store=store, dry_run=dry_run)
+        scrobbler.scrobble_tracks(tracks_to_scrobble, sync=sync, dry_run=dry_run)
 
         # Clean up database to keep it from growing too large
         scrobbler.cleanup_database(dry_run=dry_run)
@@ -51,15 +55,19 @@ def run_scrobble(store=False, dry_run=False):
 
 def setup_cli():
     """Set up the command-line interface."""
+    cli_relative_path = os.path.relpath(sys.argv[0])
+    epilog = textwrap.dedent(
+        f"""
+            Examples:
+                python {cli_relative_path} scrobble    # Normal scrobbling operation
+                python {cli_relative_path} sync        # Sync tracks without scrobbling
+                python {cli_relative_path} dry-run     # Dry-run
+        """
+    )
     parser = argparse.ArgumentParser(
         description="YTMusic to Last.fm Scrobbler CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python cli.py scrobble    # Normal scrobbling operation
-  python cli.py store       # Store tracks without scrobbling
-  python cli.py dry-run     # Dry-run
-        """,
+        epilog=epilog,
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
@@ -67,10 +75,10 @@ Examples:
     # Scrobble command
     subparsers.add_parser("scrobble", help="Scrobble tracks from YTMusic to Last.fm")
 
-    # Store command
-    subparsers.add_parser("store", help="Store tracks in database without scrobbling")
+    # Sync command
+    subparsers.add_parser("sync", help="Sync tracks in database without scrobbling")
 
-    # Store command
+    # Dry-run command
     subparsers.add_parser("dry-run", help="Dry-run")
 
     return parser
@@ -81,15 +89,15 @@ def main():
     args = parser.parse_args()
 
     if args.command == "scrobble":
-        tracks = run_scrobble(store=False, dry_run=False)
+        tracks = run_scrobble(sync=False, dry_run=False)
         logger.info(f"Scrobbled {len(tracks) if tracks else 0} tracks to Last.fm")
 
-    elif args.command == "store":
-        tracks = run_scrobble(store=True, dry_run=False)
-        logger.info(f"Stored {len(tracks) if tracks else 0} tracks in database without scrobbling")
+    elif args.command == "sync":
+        tracks = run_scrobble(sync=True, dry_run=False)
+        logger.info(f"Synced {len(tracks) if tracks else 0} tracks in database without scrobbling")
 
     elif args.command == "dry-run":
-        tracks = run_scrobble(store=False, dry_run=True)
+        tracks = run_scrobble(sync=False, dry_run=True)
         logger.info(f"Dry-run finished. Would scrobble {len(tracks) if tracks else 0} tracks to Last.fm")
     else:
         parser.print_help()
